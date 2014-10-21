@@ -1,8 +1,10 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <list>
 
 using namespace std;
+
 class Unit
 {
 protected:
@@ -38,6 +40,27 @@ public:
     Dragon(string color, int start_health, int _attackForce)
         :Unit(start_health, _attackForce), my_color(color)
     {}
+    virtual string getQuest() = 0; //pure virtual
+
+    bool checkAnswer(int answer) const
+    {
+        return answer == my_answer;
+    }
+    string color() const
+    {
+        return my_color;
+    }
+};
+
+class GreenDragon: public Dragon
+{
+    static const int c_greenDragonHealth = 50;
+    static const int c_greenDragonAttack = 10;
+public:
+    GreenDragon() :Dragon("Green",
+                          c_greenDragonHealth,
+                          c_greenDragonAttack)
+    {}
     string getQuest()
     {
         int left = 1 + rand()%100;
@@ -48,13 +71,47 @@ public:
         my_answer = left + right;
         return question.str();
     }
-    bool checkAnswer(int answer) const
+};
+
+class RedDragon: public Dragon
+{
+    static const int c_redDragonHealth = 80;
+    static const int c_redDragonAttack = 15;
+public:
+    RedDragon() :Dragon("Red",
+                          c_redDragonHealth,
+                          c_redDragonAttack)
+    {}
+    string getQuest()
     {
-        return answer == my_answer;
+        int left = 1 + rand()%50;
+        int right = 1 + rand()%50;
+
+        stringstream question;
+        question << left << " - " << right << ": ";
+        my_answer = left - right;
+        return question.str();
     }
-    string color() const
+};
+
+class BlackDragon: public Dragon
+{
+    static const int c_blackDragonHealth = 100;
+    static const int c_blackDragonAttack = 20;
+public:
+    BlackDragon() :Dragon("Black",
+                          c_blackDragonHealth,
+                          c_blackDragonAttack)
+    {}
+    string getQuest()
     {
-        return my_color;
+        int left = 1 + rand()%10;
+        int right = 1 + rand()%10;
+
+        stringstream question;
+        question << left << " * " << right << ": ";
+        my_answer = left * right;
+        return question.str();
     }
 };
 
@@ -101,18 +158,20 @@ void showHealth(const Hero &hero, const Dragon &dragon)
         << ", Dragon health: " << dragon.getHealth() << endl;
 }
 
-void playGame()
+void playGame(list<Dragon*> &dragonList)
 {
     Hero hero;
     bool gameOver = false;
-    for (int round = 0; round < 3; round++)
+    for (list<Dragon*>::iterator dragon = dragonList.begin();
+            dragon != dragonList.end(); dragon++)
     {
-        Dragon dragon("Green", 100, 10);
-        cout << "You have met a new " << dragon.color() << " dragon. Fight!" << endl;
 
-        while (dragon.isAlive() && hero.isAlive())
+        cout << "You have met a new " << (*dragon)->color()
+                << " dragon. Fight!" << endl;
+
+        while ((*dragon)->isAlive() && hero.isAlive())
         {
-            hero.attack(dragon);
+            hero.attack(**dragon);
         }
         if (!hero.isAlive())
         {
@@ -135,9 +194,19 @@ void playGame()
     }
 }
 
+list<Dragon*> generateDragonList()
+{
+    list<Dragon*> dragonList;
+    dragonList.push_back(new GreenDragon());
+    dragonList.push_back(new RedDragon());
+    dragonList.push_back(new BlackDragon());
+
+    return dragonList;
+}
 
 int main()
 {
-    playGame();
+    list<Dragon*> dragonList = generateDragonList();
+    playGame(dragonList);
     return 0;
 }
